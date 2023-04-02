@@ -5,9 +5,10 @@ import pywt
 from scipy.stats import entropy
 
 from statsmodels.tsa.stattools import adfuller, acf
+import statsmodels.api as sm
 
 
-class Paramaters:
+class Parameters:
     def __init__(self, data_set: pd.DataFrame):
         self.data = data_set
     # statistical measures
@@ -33,20 +34,14 @@ class Paramaters:
 
     def measure_trend(self, timeseries):
         # Fit linear regression to the time series
-        X = np.arange(len(timeseries)).reshape(-1, 1)
-        y = np.array(timeseries)
-        reg = LinearRegression().fit(X, y)
-
-        # Calculate the slope of the regression line
-        slope = reg.coef_[0]
-
-        # Normalize the slope value between -1 and 1 using min-max scaling
-        min_slope = np.min(reg.coef_)
-        max_slope = np.max(reg.coef_)
-        norm_slope = (slope - min_slope) / (max_slope - min_slope)
-
-        return norm_slope
-
+        cycle, trend = sm.tsa.filters.hpfilter(timeseries)
+        # Calculate total variance
+        total_var = timeseries.var()
+        # Calculate variance of trend component
+        trend_var = trend.var()
+        # Calculate trendness
+        trendness = trend_var / total_var
+        return trendness
     """auto correlation features
     """
 
@@ -91,12 +86,22 @@ class Paramaters:
         entropy_val = entropy(hist)
 
         return entropy_val
-
+    def get_params(self,timeseries):
+        return {'p1': self.get_cv(timeseries),
+                 'p2' : self.test_stationarity(timeseries),
+                    "p3": self.measure_trend(timeseries),
+                    "p4": self.auto_corr_measure(timeseries),
+                    "p5": self.seasonality_measure(timeseries),
+                    "p6": self.wavelet_rms(timeseries),
+                    "p7": self.measure_entropy(timeseries),
+                }
 
 if __name__ == "__main__":
-    eg_data = pd.read_csv("data.csv")
-    eg1 = Paramaters(eg_data)
-    timeseries = (eg1.data)[eg_data.columns[1]]
+    eg_df = pd.read_csv("sample_1.csv",index_col=0)
+    eg_df=eg_df.set_index(eg_df.columns[0])
+    eg_df= eg_df.fillna(eg_df.mean())
+    eg1 = Parameters(eg_df)
+    timeseries = (eg1.data)[eg_df.columns[0]]
     parameters={'p1': eg1.get_cv(timeseries),
                        "p2": eg1.test_stationarity(timeseries),
                        "p3": eg1.measure_trend(timeseries),
