@@ -99,6 +99,6 @@ if __name__ == "__main__":
         eg_data=eg_data.set_index('point_timestamp')
         #print('eg_data',eg_data)
         exps=exps_model(eg_data)
-        print(f'arima mape error is{exps.create_model()}')
+        print(f'arima mape error i  s{exps.create_model()}')
     
             
