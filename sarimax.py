@@ -4,6 +4,7 @@ from sklearn.metrics import mean_absolute_percentage_error
 from sklearn.model_selection import GridSearchCV
 from skforecast.model_selection_statsmodels import grid_search_sarimax
 import itertools
+import random
 import statsmodels.api as sm
 class sarimax_model:
     def __init__(self,df:pd.DataFrame):
@@ -60,11 +61,10 @@ class sarimax_model:
             # Run a grid search with pdq and seasonal pdq parameters and get the best BIC value
             ans = []
             count=0
-            for comb,combs in zip(pdq,pdqs):
+            random_pairs = random.sample(list(zip(pdq, pdqs)), 6)
+
+            for comb,combs in random_pairs:
                 try:
-                    count+=1
-                    if count>=6:
-                        break
                     mod = sm.tsa.statespace.SARIMAX(endog=ts, # this is your time series you will input
                                                     order=comb,
                                                     seasonal_order=combs,
@@ -88,7 +88,7 @@ class sarimax_model:
             return ans_df
         ### Apply function to your time series data ###
         # Remember to change frequency to match your time series data
-        ans1=sarimax_gridsearch(self.data, pdq, pdqs,freq='D')
+        ans1=sarimax_gridsearch(self.y_train, pdq, pdqs,freq='D')
         best_pdq=ans1['pdq'][0]
         best_pdqs=ans1['pdqs'][0]
         print('best pdq:', best_pdq,type(best_pdq),'best pdqs:', best_pdqs,type(best_pdqs))
@@ -96,10 +96,10 @@ class sarimax_model:
 
 
 if __name__ == "__main__":
-    eg_data = pd.read_csv("sample_1.csv")
+    eg_data = pd.read_csv("sample_3.csv")
     eg_data.drop(['ind'],axis=1,inplace=True)
     #print('eg_data',eg_data)
-    eg_data=eg_data.set_index('point_timestamp')
+    eg_data=eg_data.set_index('timestamp')
     #print('eg_data',eg_data)
     sarimax=sarimax_model(eg_data)
     print(f'arima mape error is{sarimax.create_model()}')
